@@ -1,6 +1,6 @@
 package com.bank.digital_banking.controller;
 
-import com.bank.digital_banking.model.Account;
+import com.bank.digital_banking.dto.AccountResponseDto;
 import com.bank.digital_banking.service.AccountService;
 import org.springframework.web.bind.annotation.*;
 @RestController
@@ -12,11 +12,11 @@ public class TransactionController {
         this.accountService = accountService;
     }
     @PostMapping("/{id}/deposit")
-    public Account deposit(@PathVariable Long id, @RequestParam Double amount) {
+    public AccountResponseDto deposit(@PathVariable Long id, @RequestParam Double amount) {
         return accountService.deposit(id, amount);
     }
     @PostMapping("{id}/withdraw")
-    public Account withdraw(@PathVariable Long id, @RequestParam Double amount) {
+    public AccountResponseDto withdraw(@PathVariable Long id, @RequestParam Double amount) {
         return accountService.withdraw(id, amount);
     }
     @PostMapping("/transferMoney")
