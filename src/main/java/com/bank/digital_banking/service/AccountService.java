@@ -1,11 +1,13 @@
 package com.bank.digital_banking.service;
 
+import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
 import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
 import com.bank.digital_banking.repo.TransactionRepository;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +27,7 @@ public class AccountService {
         return account_repository.findAll();
     }
     public Account getAccountById(Long id) {
-        return account_repository.findById(id).orElseThrow(() -> new RuntimeException("Account not found"));
+        return account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
     }
     public Account deposit(Long id, Double amount) {
         Account account = getAccountById(id);
@@ -58,9 +60,14 @@ public class AccountService {
 
         return account;
     }
+
+    @Transactional
     public void transferMoney(Long fromId, Long toId, Double amount) {
         Account fromAccount  = getAccountById(fromId);
         Account toAccount  = getAccountById(toId);
+        if (fromId.equals(toId)) {
+            throw new SameAccountTransferException("Cannot transfer money to same account");
+        }
         validateTransaction(fromAccount,amount);
         fromAccount.setBalance(fromAccount.getBalance() - amount);
         toAccount.setBalance(toAccount.getBalance() + amount);
@@ -86,15 +93,15 @@ public class AccountService {
     private void validateTransaction(Account account, double amount) {
 
         if (amount <= 0) {
-            throw new RuntimeException("Invalid amount");
+            throw new InvalidTransactionException("Amount must be greater than zero");
         }
 
         if (amount > account.getLimitPerTransaction()) {
-            throw new RuntimeException("Transaction limit exceeded");
+            throw new TransactionLimitException("Transaction limit exceeded");
         }
 
         if (account.getBalance() < amount) {
-            throw new RuntimeException("Insufficient funds");
+            throw new InsufficientFundsException("Insufficient funds in account");
         }
     }
 }
