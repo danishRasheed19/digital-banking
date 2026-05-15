@@ -15,5 +15,5 @@ public class Account {
     private String name;
     private Double balance;
     private String email;
-    private Double accountLimit;
+    private Double limitPerTransaction;
 }
