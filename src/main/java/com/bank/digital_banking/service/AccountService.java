@@ -1,11 +1,16 @@
 package com.bank.digital_banking.service;
 
+import com.bank.digital_banking.dto.AccountRequestDto;
+import com.bank.digital_banking.dto.AccountResponseDto;
+import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
 import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
 import com.bank.digital_banking.repo.TransactionRepository;
+import com.bank.digital_banking.utils.AccountMapper;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,17 +23,25 @@ public class AccountService {
         this.account_repository = account_repository;
         this.transaction_repository = transaction_repository;
     }
-    public Account createAccount(Account account) {
-        return account_repository.save(account);
+    public AccountResponseDto createAccount(AccountRequestDto account) {
+        Account saved=  account_repository.save(AccountMapper.toEntity(account));
+        return AccountMapper.toDto(saved);
     }
-    public List<Account> getAllAccounts() {
-        return account_repository.findAll();
+    public List<AccountResponseDto> getAllAccounts() {
+        return account_repository.findAll()
+                .stream()
+                .map(AccountMapper :: toDto)
+                .toList();
     }
-    public Account getAccountById(Long id) {
-        return account_repository.findById(id).orElseThrow(() -> new RuntimeException("Account not found"));
+    public AccountResponseDto getAccountById(Long id) {
+         Account accountFounded = account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
+         return AccountMapper.toDto(accountFounded);
     }
-    public Account deposit(Long id, Double amount) {
-        Account account = getAccountById(id);
+    private Account getAccountEntityById(Long id){
+        return account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
+    }
+    public AccountResponseDto deposit(Long id, Double amount) {
+        Account account = getAccountEntityById(id);
         account.setBalance(account.getBalance() + amount);
         account_repository.save(account);
 
@@ -40,10 +53,10 @@ public class AccountService {
                         .timestamp(LocalDateTime.now())
                         .build()
         );
-        return account;
+        return AccountMapper.toDto(account);
     }
-    public Account withdraw(Long id, Double amount) {
-        Account account = getAccountById(id);
+    public AccountResponseDto withdraw(Long id, Double amount) {
+        Account account = getAccountEntityById(id);
         validateTransaction(account,amount);
         account.setBalance(account.getBalance() - amount);
         account_repository.save(account);
@@ -56,11 +69,16 @@ public class AccountService {
                         .build()
             );
 
-        return account;
+        return AccountMapper.toDto(account);
     }
+
+    @Transactional
     public void transferMoney(Long fromId, Long toId, Double amount) {
-        Account fromAccount  = getAccountById(fromId);
-        Account toAccount  = getAccountById(toId);
+        Account fromAccount  = getAccountEntityById(fromId);
+        Account toAccount  = getAccountEntityById(toId);
+        if (fromId.equals(toId)) {
+            throw new SameAccountTransferException("Cannot transfer money to same account");
+        }
         validateTransaction(fromAccount,amount);
         fromAccount.setBalance(fromAccount.getBalance() - amount);
         toAccount.setBalance(toAccount.getBalance() + amount);
@@ -86,15 +104,15 @@ public class AccountService {
     private void validateTransaction(Account account, double amount) {
 
         if (amount <= 0) {
-            throw new RuntimeException("Invalid amount");
+            throw new InvalidTransactionException("Amount must be greater than zero");
         }
 
         if (amount > account.getLimitPerTransaction()) {
-            throw new RuntimeException("Transaction limit exceeded");
+            throw new TransactionLimitException("Transaction limit exceeded");
         }
 
         if (account.getBalance() < amount) {
-            throw new RuntimeException("Insufficient funds");
+            throw new InsufficientFundsException("Insufficient funds in account");
         }
     }
 }

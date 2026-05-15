@@ -1,5 +1,6 @@
 package com.bank.digital_banking.controller;
-import com.bank.digital_banking.model.Account;
+import com.bank.digital_banking.dto.AccountRequestDto;
+import com.bank.digital_banking.dto.AccountResponseDto;
 import com.bank.digital_banking.service.AccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -12,16 +13,16 @@ public class AccountController {
         this.accountService = accountService;
     }
     @PostMapping
-    public Account insertAccount(@RequestBody Account account) {
+    public AccountResponseDto insertAccount(@RequestBody AccountRequestDto account) {
         return accountService.createAccount(account);
     }
 
     @GetMapping
-    public List<Account> getAllAccounts() {
+    public List<AccountResponseDto> getAllAccounts() {
         return accountService.getAllAccounts();
     }
     @GetMapping("/{id}")
-    public Account getAccountById(@PathVariable Long id) {
+    public AccountResponseDto getAccountById(@PathVariable Long id) {
         return accountService.getAccountById(id);
     }
 }
