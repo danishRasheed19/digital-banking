@@ -1,12 +1,15 @@
 package com.bank.digital_banking.service.impl;
 
+import com.bank.digital_banking.dto.TransactionResponseDto;
 import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.TransactionRepository;
 import com.bank.digital_banking.service.interfaces.TransactionService;
+import com.bank.digital_banking.utils.TransactionMapper;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
@@ -24,5 +27,13 @@ public class TransactionServiceImpl implements TransactionService {
                         .timestamp(LocalDateTime.now())
                         .build()
         );
+    }
+
+    @Override
+    public List<TransactionResponseDto> getTransactions(Long accountId) {
+       return transactionRepository.findByAccountId(accountId)
+                .stream()
+                .map(TransactionMapper::toDto)
+                .toList();
     }
 }
