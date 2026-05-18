@@ -2,6 +2,7 @@ package com.bank.digital_banking.controller;
 import com.bank.digital_banking.dto.AccountRequestDto;
 import com.bank.digital_banking.dto.AccountResponseDto;
 import com.bank.digital_banking.service.interfaces.AccountService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
@@ -13,7 +14,7 @@ public class AccountController {
         this.accountService = accountService;
     }
     @PostMapping
-    public AccountResponseDto insertAccount(@RequestBody AccountRequestDto account) {
+    public AccountResponseDto insertAccount(@Valid @RequestBody AccountRequestDto account) {
         return accountService.createAccount(account);
     }
 
