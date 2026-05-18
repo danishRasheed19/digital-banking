@@ -1,27 +1,26 @@
-package com.bank.digital_banking.service;
+package com.bank.digital_banking.service.impl;
 
 import com.bank.digital_banking.dto.AccountRequestDto;
 import com.bank.digital_banking.dto.AccountResponseDto;
 import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
-import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
-import com.bank.digital_banking.repo.TransactionRepository;
+import com.bank.digital_banking.service.interfaces.AccountService;
+import com.bank.digital_banking.service.interfaces.TransactionService;
 import com.bank.digital_banking.utils.AccountMapper;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 @Service
-public class AccountService {
+public class AccountServiceImpl implements AccountService {
     private final AccountRepository account_repository;
-    private final TransactionRepository transaction_repository;
+    private final TransactionService transactionService;
 
-    public AccountService(AccountRepository account_repository,TransactionRepository transaction_repository) {
+    public AccountServiceImpl(AccountRepository account_repository,TransactionService transactionService) {
         this.account_repository = account_repository;
-        this.transaction_repository = transaction_repository;
+        this.transactionService=transactionService;
     }
     public AccountResponseDto createAccount(AccountRequestDto account) {
         Account saved=  account_repository.save(AccountMapper.toEntity(account));
@@ -44,15 +43,7 @@ public class AccountService {
         Account account = getAccountEntityById(id);
         account.setBalance(account.getBalance() + amount);
         account_repository.save(account);
-
-        transaction_repository.save(
-                Transaction.builder()
-                        .accountId(id)
-                        .amount(amount)
-                        .type(TransactionType.DEPOSIT)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
+        transactionService.logTransaction(id,amount,TransactionType.DEPOSIT);
         return AccountMapper.toDto(account);
     }
     public AccountResponseDto withdraw(Long id, Double amount) {
@@ -60,15 +51,7 @@ public class AccountService {
         validateTransaction(account,amount);
         account.setBalance(account.getBalance() - amount);
         account_repository.save(account);
-        transaction_repository.save(
-                Transaction.builder()
-                        .accountId(id)
-                        .amount(amount)
-                        .type(TransactionType.WITHDRAW)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-            );
-
+        transactionService.logTransaction(id,amount,TransactionType.WITHDRAW);
         return AccountMapper.toDto(account);
     }
 
@@ -84,22 +67,8 @@ public class AccountService {
         toAccount.setBalance(toAccount.getBalance() + amount);
         account_repository.save(fromAccount);
         account_repository.save(toAccount);
-        transaction_repository.save(
-                Transaction.builder()
-                        .accountId(fromAccount.getId())
-                        .amount(amount)
-                        .type(TransactionType.TRANSFER_OUT)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
-        transaction_repository.save(
-                Transaction.builder()
-                        .accountId(toAccount.getId())
-                        .amount(amount)
-                        .type(TransactionType.TRANSFER_IN)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
+        transactionService.logTransaction(fromAccount.getId(),amount,TransactionType.TRANSFER_OUT);
+        transactionService.logTransaction(toAccount.getId(),amount,TransactionType.TRANSFER_IN);
     }
     private void validateTransaction(Account account, double amount) {
 

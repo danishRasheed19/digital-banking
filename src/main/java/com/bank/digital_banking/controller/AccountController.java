@@ -1,7 +1,7 @@
 package com.bank.digital_banking.controller;
 import com.bank.digital_banking.dto.AccountRequestDto;
 import com.bank.digital_banking.dto.AccountResponseDto;
-import com.bank.digital_banking.service.AccountService;
+import com.bank.digital_banking.service.interfaces.AccountService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 @RestController
