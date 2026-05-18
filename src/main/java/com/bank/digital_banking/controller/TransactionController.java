@@ -1,7 +1,10 @@
 package com.bank.digital_banking.controller;
 
 import com.bank.digital_banking.dto.AccountResponseDto;
-import com.bank.digital_banking.service.AccountService;
+import com.bank.digital_banking.dto.TransactionRequestDto;
+import com.bank.digital_banking.dto.TransferRequestDto;
+import com.bank.digital_banking.service.interfaces.AccountService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/transactions")
@@ -12,15 +15,15 @@ public class TransactionController {
         this.accountService = accountService;
     }
     @PostMapping("/{id}/deposit")
-    public AccountResponseDto deposit(@PathVariable Long id, @RequestParam Double amount) {
-        return accountService.deposit(id, amount);
+    public AccountResponseDto deposit(@PathVariable Long id, @Valid @RequestBody TransactionRequestDto request) {
+        return accountService.deposit(id, request.getAmount());
     }
     @PostMapping("{id}/withdraw")
-    public AccountResponseDto withdraw(@PathVariable Long id, @RequestParam Double amount) {
-        return accountService.withdraw(id, amount);
+    public AccountResponseDto withdraw(@PathVariable Long id, @Valid @RequestBody TransactionRequestDto request) {
+        return accountService.withdraw(id, request.getAmount());
     }
     @PostMapping("/transferMoney")
-    public void transferMoney(@RequestParam Long from, @RequestParam Long to, @RequestParam Double amount) {
-        accountService.transferMoney(from,to,amount);
+    public void transferMoney(@Valid @RequestBody TransferRequestDto request) {
+        accountService.transferMoney(request.getFromId(), request.getToId(), request.getAmount());
     }
 }
