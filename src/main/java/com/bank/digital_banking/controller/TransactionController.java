@@ -7,6 +7,9 @@ import com.bank.digital_banking.dto.TransferRequestDto;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +37,7 @@ public class TransactionController {
         accountService.transferMoney(request.getFromId(), request.getToId(), request.getAmount());
     }
     @GetMapping("{id}/getTransactions")
-    public List<TransactionResponseDto> getTransactions(@PathVariable Long id) {
-        return transactionService.getTransactions(id);
+    public Page<TransactionResponseDto> getTransactions(@PathVariable Long id, @PageableDefault(size = 10) Pageable pageable) {
+        return transactionService.getTransactions(id,pageable);
     }
 }

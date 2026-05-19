@@ -6,6 +6,8 @@ import com.bank.digital_banking.repo.TransactionRepository;
 import com.bank.digital_banking.service.interfaces.TransactionService;
 import com.bank.digital_banking.utils.TransactionMapper;
 import com.bank.digital_banking.utils.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,10 +32,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionResponseDto> getTransactions(Long accountId) {
-       return transactionRepository.findByAccountId(accountId)
-                .stream()
-                .map(TransactionMapper::toDto)
-                .toList();
+    public Page<TransactionResponseDto> getTransactions(Long accountId, Pageable pageable) {
+        Page<Transaction> transactions = transactionRepository.findByAccountId(accountId,pageable);
+       return transactions.map(transaction -> TransactionMapper.toDto(transaction));
     }
 }
