@@ -1,8 +1,16 @@
 package com.bank.digital_banking.utils;
 
 public enum TransactionType {
-    DEPOSIT,
-    WITHDRAW,
-    TRANSFER_IN,
-    TRANSFER_OUT
+    DEPOSIT(1),
+    WITHDRAW(-1),
+    TRANSFER_IN(1),
+    TRANSFER_OUT(-1);
+
+    private final int multiplier;
+    TransactionType(int multiplier) {
+        this.multiplier = multiplier;
+    }
+    public int getMultiplier() {
+        return multiplier;
+    }
 }

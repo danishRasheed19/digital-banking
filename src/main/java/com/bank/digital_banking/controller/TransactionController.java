@@ -4,8 +4,11 @@ import com.bank.digital_banking.dto.AccountResponseDto;
 import com.bank.digital_banking.dto.TransactionRequestDto;
 import com.bank.digital_banking.dto.TransactionResponseDto;
 import com.bank.digital_banking.dto.TransferRequestDto;
+import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
+import com.bank.digital_banking.utils.AccountMapper;
+import com.bank.digital_banking.utils.TransactionMapper;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,11 +29,11 @@ public class TransactionController {
     }
     @PostMapping("/{id}/deposit")
     public AccountResponseDto deposit(@PathVariable Long id, @Valid @RequestBody TransactionRequestDto request) {
-        return accountService.deposit(id, request.getAmount());
+        return AccountMapper.toDto(accountService.deposit(id, request.getAmount()));
     }
     @PostMapping("{id}/withdraw")
     public AccountResponseDto withdraw(@PathVariable Long id, @Valid @RequestBody TransactionRequestDto request) {
-        return accountService.withdraw(id, request.getAmount());
+        return AccountMapper.toDto(accountService.withdraw(id, request.getAmount()));
     }
     @PostMapping("/transferMoney")
     public void transferMoney(@Valid @RequestBody TransferRequestDto request) {
@@ -38,6 +41,7 @@ public class TransactionController {
     }
     @GetMapping("{id}/getTransactions")
     public Page<TransactionResponseDto> getTransactions(@PathVariable Long id, @PageableDefault(size = 10) Pageable pageable) {
-        return transactionService.getTransactions(id,pageable);
+        Page<Transaction> transactions=transactionService.getTransactions(id,pageable);
+        return transactions.map(transaction -> TransactionMapper.toDto(transaction));
     }
 }
