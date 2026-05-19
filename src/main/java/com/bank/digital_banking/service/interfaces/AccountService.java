@@ -1,20 +1,21 @@
 package com.bank.digital_banking.service.interfaces;
 
-import com.bank.digital_banking.dto.AccountRequestDto;
-import com.bank.digital_banking.dto.AccountResponseDto;
+
+import com.bank.digital_banking.model.Account;
 
 import java.util.List;
 
 public interface AccountService {
-    AccountResponseDto createAccount(AccountRequestDto account);
+    Account createAccount(Account account);
 
-    AccountResponseDto getAccountById(Long id);
+    Account getAccountById(Long id);
 
-    List<AccountResponseDto> getAllAccounts();
+    List<Account> getAllAccounts();
 
-    AccountResponseDto deposit(Long id, Double amount);
+    Account deposit(Long id, Double amount);
 
-    AccountResponseDto withdraw(Long id, Double amount);
+    Account withdraw(Long id, Double amount);
 
     void transferMoney(Long fromId, Long toId, Double amount);
+    Double calculateBalance(Long accountId);
 }

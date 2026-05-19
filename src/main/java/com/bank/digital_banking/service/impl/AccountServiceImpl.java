@@ -1,13 +1,12 @@
 package com.bank.digital_banking.service.impl;
 
-import com.bank.digital_banking.dto.AccountRequestDto;
-import com.bank.digital_banking.dto.AccountResponseDto;
+
 import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
+import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
-import com.bank.digital_banking.utils.AccountMapper;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,43 +21,46 @@ public class AccountServiceImpl implements AccountService {
         this.account_repository = account_repository;
         this.transactionService=transactionService;
     }
-    public AccountResponseDto createAccount(AccountRequestDto account) {
-        Account saved=  account_repository.save(AccountMapper.toEntity(account));
-        return AccountMapper.toDto(saved);
+    @Override
+    @Transactional
+    public Account createAccount(Account account) {
+        Account saved = account_repository.save(account);
+        if(saved.getBalance() != null && saved.getBalance()>0){
+            transactionService.logTransaction(saved.getId(),saved.getBalance(),TransactionType.DEPOSIT);
+        }
+        return saved;
     }
-    public List<AccountResponseDto> getAllAccounts() {
-        return account_repository.findAll()
-                .stream()
-                .map(AccountMapper :: toDto)
-                .toList();
+    @Override
+    public List<Account> getAllAccounts() {
+        return account_repository.findAll();
     }
-    public AccountResponseDto getAccountById(Long id) {
-         Account accountFounded = account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
-         return AccountMapper.toDto(accountFounded);
+    @Override
+    public Account getAccountById(Long id) {
+         Account accountFound = account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
+         return accountFound;
     }
-    private Account getAccountEntityById(Long id){
-        return account_repository.findById(id).orElseThrow(() -> new AccountNotFoundException(id));
-    }
-    public AccountResponseDto deposit(Long id, Double amount) {
-        Account account = getAccountEntityById(id);
+    @Override
+    public Account deposit(Long id, Double amount) {
+        Account account = getAccountById(id);
         account.setBalance(account.getBalance() + amount);
         account_repository.save(account);
         transactionService.logTransaction(id,amount,TransactionType.DEPOSIT);
-        return AccountMapper.toDto(account);
+        return account;
     }
-    public AccountResponseDto withdraw(Long id, Double amount) {
-        Account account = getAccountEntityById(id);
+    @Override
+    public Account withdraw(Long id, Double amount) {
+        Account account = getAccountById(id);
         validateTransaction(account,amount);
         account.setBalance(account.getBalance() - amount);
         account_repository.save(account);
         transactionService.logTransaction(id,amount,TransactionType.WITHDRAW);
-        return AccountMapper.toDto(account);
+        return account;
     }
 
     @Transactional
     public void transferMoney(Long fromId, Long toId, Double amount) {
-        Account fromAccount  = getAccountEntityById(fromId);
-        Account toAccount  = getAccountEntityById(toId);
+        Account fromAccount  = getAccountById(fromId);
+        Account toAccount  = getAccountById(toId);
         if (fromId.equals(toId)) {
             throw new SameAccountTransferException("Cannot transfer money to same account");
         }
@@ -69,6 +71,16 @@ public class AccountServiceImpl implements AccountService {
         account_repository.save(toAccount);
         transactionService.logTransaction(fromAccount.getId(),amount,TransactionType.TRANSFER_OUT);
         transactionService.logTransaction(toAccount.getId(),amount,TransactionType.TRANSFER_IN);
+    }
+    @Override
+    public Double calculateBalance(Long accountId){
+        account_repository.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
+        List<Transaction> transactions= transactionService.getTransactions(accountId);
+        return transactions
+                .stream()
+                .mapToDouble(transaction ->
+                        transaction.getAmount() * transaction.getType().getMultiplier())
+                .sum();
     }
     private void validateTransaction(Account account, double amount) {
 
