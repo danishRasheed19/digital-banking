@@ -17,4 +17,5 @@ public interface AccountService {
     Account withdraw(Long id, Double amount);
 
     void transferMoney(Long fromId, Long toId, Double amount);
+    Double calculateBalance(Long accountId);
 }

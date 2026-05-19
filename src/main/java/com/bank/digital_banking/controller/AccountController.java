@@ -30,4 +30,8 @@ public class AccountController {
     public AccountResponseDto getAccountById(@PathVariable Long id) {
         return AccountMapper.toDto(accountService.getAccountById(id));
     }
+    @GetMapping("/{id}/balance")
+    public Double calculateBalance(@PathVariable Long id) {
+        return accountService.calculateBalance(id);
+    }
 }

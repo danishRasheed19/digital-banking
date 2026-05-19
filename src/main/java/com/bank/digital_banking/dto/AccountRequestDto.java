@@ -3,6 +3,7 @@ package com.bank.digital_banking.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,6 @@ public class AccountRequestDto {
     @Positive(message = "Limit per transaction must be positive")
     private Double limitPerTransaction;
 
-    @Positive(message = "Initial balance must be positive")
+    @PositiveOrZero(message = "Initial balance must be positive or zero")
     private Double balance;
 }

@@ -1,13 +1,12 @@
 package com.bank.digital_banking.service.impl;
 
-import com.bank.digital_banking.dto.AccountRequestDto;
-import com.bank.digital_banking.dto.AccountResponseDto;
+
 import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
+import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
-import com.bank.digital_banking.utils.AccountMapper;
 import com.bank.digital_banking.utils.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,8 +22,13 @@ public class AccountServiceImpl implements AccountService {
         this.transactionService=transactionService;
     }
     @Override
+    @Transactional
     public Account createAccount(Account account) {
-        return account_repository.save(account);
+        Account saved = account_repository.save(account);
+        if(saved.getBalance() != null && saved.getBalance()>0){
+            transactionService.logTransaction(saved.getId(),saved.getBalance(),TransactionType.DEPOSIT);
+        }
+        return saved;
     }
     @Override
     public List<Account> getAllAccounts() {
@@ -67,6 +71,16 @@ public class AccountServiceImpl implements AccountService {
         account_repository.save(toAccount);
         transactionService.logTransaction(fromAccount.getId(),amount,TransactionType.TRANSFER_OUT);
         transactionService.logTransaction(toAccount.getId(),amount,TransactionType.TRANSFER_IN);
+    }
+    @Override
+    public Double calculateBalance(Long accountId){
+        account_repository.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
+        List<Transaction> transactions= transactionService.getTransactions(accountId);
+        return transactions
+                .stream()
+                .mapToDouble(transaction ->
+                        transaction.getAmount() * transaction.getType().getMultiplier())
+                .sum();
     }
     private void validateTransaction(Account account, double amount) {
 
