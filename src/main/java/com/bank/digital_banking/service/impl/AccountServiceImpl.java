@@ -7,11 +7,14 @@ import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
-import com.bank.digital_banking.utils.TransactionType;
+import com.bank.digital_banking.utils.enums.TransactionStatus;
+import com.bank.digital_banking.utils.enums.TransactionType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+
 @Service
 public class AccountServiceImpl implements AccountService {
     private final AccountRepository account_repository;
@@ -26,7 +29,7 @@ public class AccountServiceImpl implements AccountService {
     public Account createAccount(Account account) {
         Account saved = account_repository.save(account);
         if(saved.getBalance() != null && saved.getBalance()>0){
-            transactionService.logTransaction(saved.getId(),saved.getBalance(),TransactionType.DEPOSIT);
+            transactionService.logTransaction(saved.getId(),saved.getBalance(),TransactionType.DEPOSIT,TransactionStatus.SUCCESS);
         }
         return saved;
     }
@@ -40,42 +43,77 @@ public class AccountServiceImpl implements AccountService {
          return accountFound;
     }
     @Override
+    @Transactional
     public Account deposit(Long id, Double amount) {
         Account account = getAccountById(id);
-        account.setBalance(account.getBalance() + amount);
-        account_repository.save(account);
-        transactionService.logTransaction(id,amount,TransactionType.DEPOSIT);
-        return account;
+        if (amount <= 0) {
+            throw new InvalidTransactionException("Amount must be greater than zero");
+        }
+        try{
+            Double currentBalance = Optional.ofNullable(account.getBalance()).orElse(0.0);
+            account.setBalance(currentBalance+amount);
+            Account saved = account_repository.save(account);
+            transactionService.logTransaction(id,amount,TransactionType.DEPOSIT,TransactionStatus.SUCCESS);
+            return saved;
+        }catch(Exception e){
+            transactionService.logTransaction(id,amount,TransactionType.DEPOSIT,TransactionStatus.FAILED);
+            throw (e);
+        }
     }
     @Override
+    @Transactional
     public Account withdraw(Long id, Double amount) {
         Account account = getAccountById(id);
         validateTransaction(account,amount);
-        account.setBalance(account.getBalance() - amount);
-        account_repository.save(account);
-        transactionService.logTransaction(id,amount,TransactionType.WITHDRAW);
-        return account;
+        try{
+            Double currentBalance =  Optional.ofNullable(account.getBalance()).orElse(0.0);
+            account.setBalance(currentBalance - amount);
+            Account saved = account_repository.save(account);
+            transactionService.logTransaction(id,amount,TransactionType.WITHDRAW,TransactionStatus.SUCCESS);
+            return saved;
+        } catch(Exception e){
+            transactionService.logTransaction(id,amount,TransactionType.WITHDRAW,TransactionStatus.FAILED);
+            throw (e);
+        }
     }
 
     @Transactional
     public void transferMoney(Long fromId, Long toId, Double amount) {
-        Account fromAccount  = getAccountById(fromId);
-        Account toAccount  = getAccountById(toId);
         if (fromId.equals(toId)) {
             throw new SameAccountTransferException("Cannot transfer money to same account");
         }
+        Account fromAccount  = getAccountById(fromId);
+        Account toAccount  = getAccountById(toId);
         validateTransaction(fromAccount,amount);
-        fromAccount.setBalance(fromAccount.getBalance() - amount);
-        toAccount.setBalance(toAccount.getBalance() + amount);
-        account_repository.save(fromAccount);
-        account_repository.save(toAccount);
-        transactionService.logTransaction(fromAccount.getId(),amount,TransactionType.TRANSFER_OUT);
-        transactionService.logTransaction(toAccount.getId(),amount,TransactionType.TRANSFER_IN);
+        try{
+            fromAccount.setBalance(fromAccount.getBalance() - amount);
+            toAccount.setBalance(toAccount.getBalance() + amount);
+            account_repository.save(fromAccount);
+            account_repository.save(toAccount);
+            transactionService.logTransaction(fromAccount.getId(),amount,TransactionType.TRANSFER_OUT,TransactionStatus.SUCCESS);
+            transactionService.logTransaction(toAccount.getId(),amount,TransactionType.TRANSFER_IN,TransactionStatus.SUCCESS);
+        }catch(Exception e){
+            transactionService.logTransaction(
+                    fromId,
+                    amount,
+                    TransactionType.TRANSFER_OUT,
+                    TransactionStatus.FAILED
+            );
+
+            transactionService.logTransaction(
+                    toId,
+                    amount,
+                    TransactionType.TRANSFER_IN,
+                    TransactionStatus.FAILED
+            );
+
+            throw e;
+        }
     }
     @Override
     public Double calculateBalance(Long accountId){
         account_repository.findById(accountId).orElseThrow(() -> new AccountNotFoundException(accountId));
-        List<Transaction> transactions= transactionService.getTransactions(accountId);
+        List<Transaction> transactions= transactionService.getTransactionsByAccountIdAndStatus(accountId, TransactionStatus.SUCCESS);
         return transactions
                 .stream()
                 .mapToDouble(transaction ->

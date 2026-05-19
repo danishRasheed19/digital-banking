@@ -1,4 +1,4 @@
-package com.bank.digital_banking.utils;
+package com.bank.digital_banking.utils.enums;
 
 public enum TransactionType {
     DEPOSIT(1),

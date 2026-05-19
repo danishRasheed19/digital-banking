@@ -12,6 +12,7 @@ public class TransactionMapper {
         return TransactionResponseDto.builder()
                 .accountId(transaction.getAccountId())
                 .transactionType(transaction.getType())
+                .transactionStatus(transaction.getStatus())
                 .amount(transaction.getAmount())
                 .timestamp(transaction.getTimestamp())
                 .build();

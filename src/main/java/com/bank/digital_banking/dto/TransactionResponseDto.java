@@ -1,6 +1,7 @@
 package com.bank.digital_banking.dto;
 
-import com.bank.digital_banking.utils.TransactionType;
+import com.bank.digital_banking.utils.enums.TransactionStatus;
+import com.bank.digital_banking.utils.enums.TransactionType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 public class TransactionResponseDto {
     private Long accountId;
     private TransactionType transactionType;
+    private TransactionStatus transactionStatus;
     private Double amount;
     private LocalDateTime timestamp;
 }
