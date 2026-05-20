@@ -14,4 +14,6 @@ public class AccountResponseDto {
     private String email;
     private Double limitPerTransaction;
     private Double balance;
+    private Double dailyLimit;
+    private Double monthlyLimit;
 }

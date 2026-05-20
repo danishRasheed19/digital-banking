@@ -15,5 +15,10 @@ public class Account {
     private String name;
     private Double balance;
     private String email;
-    private Double limitPerTransaction;
+    @Builder.Default
+    private Double limitPerTransaction = 1000.0;
+    @Builder.Default
+    private Double dailyLimit = 5000.0;
+    @Builder.Default
+    private Double monthlyLimit = 10000.0;
 }

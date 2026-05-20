@@ -11,7 +11,9 @@ public class AccountMapper {
                 .name(dto.getName())
                 .email(dto.getEmail())
                 .balance(dto.getBalance())
-                .limitPerTransaction(dto.getLimitPerTransaction())
+                .limitPerTransaction(dto.getLimitPerTransaction() == null ? 1000.0 : dto.getLimitPerTransaction())
+                .dailyLimit(dto.getDailyLimit() == null ? 5000.0 : dto.getDailyLimit())
+                .monthlyLimit(dto.getMonthlyLimit() == null ? 10000.0 : dto.getMonthlyLimit())
                 .build();
     }
 
@@ -22,6 +24,8 @@ public class AccountMapper {
                 .email(account.getEmail())
                 .balance(account.getBalance())
                 .limitPerTransaction(account.getLimitPerTransaction())
+                .dailyLimit(account.getDailyLimit())
+                .monthlyLimit(account.getMonthlyLimit())
                 .build();
     }
 }

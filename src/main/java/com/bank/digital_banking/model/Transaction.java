@@ -1,9 +1,9 @@
 package com.bank.digital_banking.model;
-import com.bank.digital_banking.utils.TransactionType;
+import com.bank.digital_banking.utils.enums.TransactionStatus;
+import com.bank.digital_banking.utils.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 @Entity
 @Data
@@ -17,6 +17,7 @@ public class Transaction {
 
     private Long accountId;
     private TransactionType type;
+    private TransactionStatus status;
     private double amount;
     private LocalDateTime timestamp;
 }
