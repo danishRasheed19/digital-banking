@@ -5,6 +5,7 @@ import com.bank.digital_banking.exception.*;
 import com.bank.digital_banking.model.Account;
 import com.bank.digital_banking.model.Transaction;
 import com.bank.digital_banking.repo.AccountRepository;
+import com.bank.digital_banking.service.impl.transactionRules.TransactionValidator;
 import com.bank.digital_banking.service.interfaces.AccountService;
 import com.bank.digital_banking.service.interfaces.TransactionService;
 import com.bank.digital_banking.utils.enums.TransactionStatus;
@@ -19,11 +20,14 @@ import java.util.Optional;
 public class AccountServiceImpl implements AccountService {
     private final AccountRepository account_repository;
     private final TransactionService transactionService;
+    private final TransactionValidator transactionValidator;
 
-    public AccountServiceImpl(AccountRepository account_repository,TransactionService transactionService) {
+    public AccountServiceImpl(AccountRepository account_repository,TransactionService transactionService, TransactionValidator transactionValidator) {
         this.account_repository = account_repository;
         this.transactionService=transactionService;
+        this.transactionValidator=transactionValidator;
     }
+
     @Override
     @Transactional
     public Account createAccount(Account account) {
@@ -46,9 +50,7 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public Account deposit(Long id, Double amount) {
         Account account = getAccountById(id);
-        if (amount <= 0) {
-            throw new InvalidTransactionException("Amount must be greater than zero");
-        }
+        transactionValidator.validate(account,amount,TransactionType.DEPOSIT);
         try{
             Double currentBalance = Optional.ofNullable(account.getBalance()).orElse(0.0);
             account.setBalance(currentBalance+amount);
@@ -64,7 +66,7 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public Account withdraw(Long id, Double amount) {
         Account account = getAccountById(id);
-        validateTransaction(account,amount);
+        transactionValidator.validate(account,amount,TransactionType.WITHDRAW);
         try{
             Double currentBalance =  Optional.ofNullable(account.getBalance()).orElse(0.0);
             account.setBalance(currentBalance - amount);
@@ -84,7 +86,7 @@ public class AccountServiceImpl implements AccountService {
         }
         Account fromAccount  = getAccountById(fromId);
         Account toAccount  = getAccountById(toId);
-        validateTransaction(fromAccount,amount);
+        transactionValidator.validate(fromAccount,amount,TransactionType.TRANSFER_OUT);
         try{
             fromAccount.setBalance(fromAccount.getBalance() - amount);
             toAccount.setBalance(toAccount.getBalance() + amount);
@@ -119,19 +121,5 @@ public class AccountServiceImpl implements AccountService {
                 .mapToDouble(transaction ->
                         transaction.getAmount() * transaction.getType().getMultiplier())
                 .sum();
-    }
-    private void validateTransaction(Account account, double amount) {
-
-        if (amount <= 0) {
-            throw new InvalidTransactionException("Amount must be greater than zero");
-        }
-
-        if (amount > account.getLimitPerTransaction()) {
-            throw new TransactionLimitException("Transaction limit exceeded");
-        }
-
-        if (account.getBalance() < amount) {
-            throw new InsufficientFundsException("Insufficient funds in account");
-        }
     }
 }

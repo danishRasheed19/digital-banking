@@ -13,4 +13,6 @@ public interface TransactionService {
     Page<Transaction> getTransactions(Long accountId, Pageable pageable);
     List<Transaction> getTransactions(Long accountId);
     List<Transaction> getTransactionsByAccountIdAndStatus(Long accountId,TransactionStatus status);
+    Double getTotalSpentToday(Long accountId);
+    Double getTotalSpentThisMonth(Long accountId);
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -43,5 +44,23 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<Transaction> getTransactionsByAccountIdAndStatus(Long accountId, TransactionStatus status) {
         return transactionRepository.findByAccountIdAndStatus(accountId,status);
+    }
+    @Override
+    public Double getTotalSpentToday(Long accountId) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        return  transactionRepository.findByAccountIdAndTimestampAfter(accountId,startOfDay)
+                .stream()
+                .filter(t -> t.getType() == TransactionType.WITHDRAW || t.getType() == TransactionType.TRANSFER_OUT)
+                .mapToDouble(Transaction ::getAmount)
+                .sum();
+    }
+    @Override
+    public Double getTotalSpentThisMonth(Long accountId) {
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        return transactionRepository.findByAccountIdAndTimestampAfter(accountId,startOfMonth)
+                .stream()
+                .filter(t-> t.getType() == TransactionType.WITHDRAW || t.getType() == TransactionType.TRANSFER_OUT)
+                .mapToDouble(Transaction ::getAmount)
+                .sum();
     }
 }

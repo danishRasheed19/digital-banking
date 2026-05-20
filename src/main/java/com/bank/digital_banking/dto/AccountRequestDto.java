@@ -27,4 +27,10 @@ public class AccountRequestDto {
 
     @PositiveOrZero(message = "Initial balance must be positive or zero")
     private Double balance;
+
+    @Positive(message = "Daily limit must be greater than 0")
+    private Double dailyLimit;
+
+    @Positive(message = "Monthly limit must be greater than 0")
+    private Double monthlyLimit;
 }

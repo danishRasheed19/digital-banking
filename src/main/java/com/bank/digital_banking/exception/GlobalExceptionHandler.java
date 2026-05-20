@@ -52,6 +52,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(error);
     }
+    @ExceptionHandler(DailyLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> dailyLimitExceededException(DailyLimitExceededException e) {
+        ErrorResponse error = new ErrorResponse(LocalDateTime.now(), 400, e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+    @ExceptionHandler(MonthlyLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> monthlyLimitExceededException(MonthlyLimitExceededException e) {
+        ErrorResponse error = new ErrorResponse(LocalDateTime.now(), 400, e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex) {
